@@ -42,13 +42,15 @@ def register():
     return make_response(jsonify({"message": "Account created"}), 201)
 
 
-@auth_bp.route("/api/v1.0/auth/login", methods=["POST"])
+@auth_bp.route("/api/v1.0/auth/login", methods=["GET"])
 def login():
-    if "username" not in request.form or "password" not in request.form:
-        return make_response(jsonify({"error": "username and password are required"}), 400)
+    auth = request.authorization
+    if auth is None or not auth.username or not auth.password:
+        return make_response(jsonify({"error": "Username and password are required using Basic Auth"}), 401,
+                             {"WWW-Authenticate": 'Basic realm="Login required"'})
 
-    user = users.find_one({"username": request.form["username"].strip()})
-    if user is None or not bcrypt.checkpw(request.form["password"].encode("utf-8"), user["password"]):
+    user = users.find_one({"username": auth.username.strip()})
+    if user is None or not bcrypt.checkpw(auth.password.encode("utf-8"), user["password"]):
         return make_response(jsonify({"error": "Invalid username or password"}), 401)
 
     token = jwt.encode({
@@ -60,7 +62,7 @@ def login():
     return make_response(jsonify({"token": token, "role": user["role"]}), 200)
 
 
-@auth_bp.route("/api/v1.0/auth/logout", methods=["POST"])
+@auth_bp.route("/api/v1.0/auth/logout", methods=["GET"])
 @jwt_required
 def logout():
     token = request.headers["x-access-token"]

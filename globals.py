@@ -1,7 +1,7 @@
 import os
 from pymongo import MongoClient
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-secret")
+SECRET_KEY = "com661-property-sales-api-secret-key-2026"
 
 client = MongoClient("mongodb://localhost:27017")
 db = client.propertyDB
