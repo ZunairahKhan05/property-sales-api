@@ -11,6 +11,8 @@ auth_bp = Blueprint("auth_bp", __name__)
 users = globals.db.users
 blacklist = globals.db.blacklist
 
+blacklist.create_index("expires_at", expireAfterSeconds=0)
+
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_]{3,30}$")
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -66,7 +68,8 @@ def login():
 @jwt_required
 def logout():
     token = request.headers["x-access-token"]
-    blacklist.insert_one({"token": token})
+    expires_at = datetime.datetime.fromtimestamp(g.user["exp"], datetime.timezone.utc)
+    blacklist.insert_one({"token": token, "expires_at": expires_at})
     return make_response(jsonify({"message": "Logout successful"}), 200)
 
 
